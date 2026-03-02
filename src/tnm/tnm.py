@@ -106,7 +106,7 @@ def _execute_api_request(
         # Invalid JSON response
         raise Exception(
             f"The National Map API returned invalid JSON. Response text: {res.text[:500]}. URL: {res.url}"
-        )
+        ) from e
 
     # Check if response is a string (error message) instead of expected dict
     if isinstance(response_json, str):
@@ -197,14 +197,15 @@ def _execute_TNM_api_query(
                 )
             )
 
-        if len(aws_url) > 0 and not (filePath is None):
+        if len(aws_url) > 0 and filePath is not None:
             try:
                 # If the query returned products AND filePath was specified, write to it
                 with open(filePath, "a") as outputs_file:
                     for line in aws_url:
                         outputs_file.write(line + "\n")
 
-            except:
+            except Exception as e:
+                print(f"Error writing AWS URLs to {filePath}: {e}")
                 savepath = os.path.join(filePath, "awsPaths.txt")
                 with open(savepath, "a") as outputs_file:
                     for line in aws_url:
@@ -254,7 +255,7 @@ def _check_tnm_dataset_datatype_compatibility(dataset: str, dataType: str):
 
     """
 
-    if (dataset == "LPC") and not (dataType in LIDARDATAYPES):
+    if (dataset == "LPC") and (dataType not in LIDARDATAYPES):
         raise Exception(
             "Warning, {} is not available. Available datatypes for LPC are LAS, LAZ, or LAS,LAZ".format(
                 dataType
@@ -263,12 +264,12 @@ def _check_tnm_dataset_datatype_compatibility(dataset: str, dataType: str):
 
     try:
         dataset_fullname = DATASETS_DICT[dataset]
-    except:
+    except KeyError as e:
         raise KeyError(
             "Warning, {} is not available. Available datasets are: {}".format(
                 dataset, list(DATASETS_DICT.keys())
             )
-        )
+        ) from e
 
     return dataset_fullname
 
@@ -838,7 +839,7 @@ def process_single_dem(args: tuple) -> dict:
             if ds is not None:
                 try:
                     ds.close()
-                except:
+                except Exception as e:
                     pass
                 del ds
             gc.collect()
