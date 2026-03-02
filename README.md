@@ -16,9 +16,11 @@ This repository is designed for processing Digital Elevation Model (DEM) data fr
 - **File Format**: Cloud-Optimized GeoTIFF (COG)
 - **Target CRS**: USA_Contiguous_Albers_Equal_Area_Conic_FFRD 
 - **Vertical Units**: feet
-- **Output Resolution**: 4-feet
+- **Horizontal Resolution**: 4-feet
 - **Compression**: LZW
 - **NoData Value**: -9999
+- **Fixed Origin**: A fixed grid origin at (0,0) in projected coordinates
+- **Target Aligned Pixels**: Tile boundaries fall on exact multiples of the tile size measured from the grid origin
 
 ## File Naming Convention
 
