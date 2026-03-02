@@ -1,6 +1,7 @@
 """Tests for process_single_dem reprojection behavior."""
 
 import numpy as np
+import pytest
 import rasterio
 from shapely.geometry import box
 from shapely import wkb
@@ -179,6 +180,7 @@ def test_process_single_dem_writes_cog(monkeypatch, tmp_path):
     assert dataset.rio.last_to_raster["kwargs"].get("driver") == "COG"
 
 
+@pytest.mark.integration
 def test_process_single_dem_real_tile(tmp_path):
     """Integration test that downloads and processes a real DEM tile."""
     # Create a bounding box that covers the tile area (NY Southwest)
