@@ -934,6 +934,8 @@ def main_get_dem_tiles(
     )
 
     all_results = []
+    logs_path = os.path.join(logs_folder, "logs.csv")
+    os.makedirs(logs_folder, exist_ok=True)
 
     for batch_idx in range(num_batches):
         batch_start = batch_idx * batch_size
@@ -984,8 +986,17 @@ def main_get_dem_tiles(
             f"Batch {batch_idx + 1} complete: {batch_success}/{len(batch_items)} succeeded"
         )
 
+        # Append batch results to log file incrementally
+        batch_df = pd.DataFrame(batch_results)
+        batch_df.to_csv(
+            logs_path,
+            mode="a",
+            header=(batch_idx == 0),
+            index=False,
+        )
+
         # Force garbage collection
-        del worker_args, batch_results
+        del worker_args, batch_results, batch_df
         gc.collect()
 
     # Convert results to DataFrame
@@ -997,8 +1008,6 @@ def main_get_dem_tiles(
     print(
         f"\nAll batches complete: {success_count} succeeded, {fail_count} failed/skipped"
     )
-    logs_path = os.path.join(logs_folder, "logs.csv")
-    results_df.to_csv(logs_path, index=False)
     return results_df
 
 
