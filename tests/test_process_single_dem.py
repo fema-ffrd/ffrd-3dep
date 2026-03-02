@@ -1,10 +1,14 @@
 """Tests for process_single_dem reprojection behavior."""
 
 import numpy as np
+import rasterio
+from shapely.geometry import box
+from shapely import wkb
 from types import SimpleNamespace
 
 from tnm.tnm import calculate_tap_bounds, process_single_dem
 
+TEST_TILE = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/NY_Southwest_2_Co_2016/TIFF/USGS_one_meter_x24y466_NY_Southwest_2_Co_2016.tif"
 TARGET_CRS = """PROJCS["USA_Contiguous_Albers_Equal_Area_Conic_FFRD",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Albers"],PARAMETER["False_Easting",0.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",-96.0],PARAMETER["Standard_Parallel_1",29.5],PARAMETER["Standard_Parallel_2",45.5],PARAMETER["Latitude_Of_Origin",23.0],UNIT["Foot",0.3048]]"""
 TARGET_RES = 4.0
 NODATA_VAL = -9999
@@ -173,3 +177,40 @@ def test_process_single_dem_writes_cog(monkeypatch, tmp_path):
     assert result["success"] is True
     assert dataset.rio.last_to_raster is not None
     assert dataset.rio.last_to_raster["kwargs"].get("driver") == "COG"
+
+
+def test_process_single_dem_real_tile(tmp_path):
+    """Integration test that downloads and processes a real DEM tile."""
+    # Create a bounding box that covers the tile area (NY Southwest)
+    clip_geom = box(-80.39, 39.90, -77.82, 42.46)
+    clip_geom_wkb = wkb.dumps(clip_geom)
+
+    output_path = tmp_path / "out" / "real_tile.tif"
+    args = (
+        TEST_TILE,
+        str(output_path),
+        clip_geom_wkb,
+        "EPSG:4326",
+        TARGET_CRS,
+        TARGET_RES,
+        NODATA_VAL,
+        "lzw",
+    )
+
+    result = process_single_dem(args)
+
+    assert result["success"] is True, f"Processing failed: {result['message']}"
+    assert output_path.exists(), "Output file was not created"
+
+    # Verify output raster properties
+    with rasterio.open(output_path) as src:
+        # Check CRS matches target (projection name is preserved)
+        assert "USA_Contiguous_Albers_Equal_Area_Conic_FFRD" in src.crs.to_wkt()
+        # Check resolution is correct (4 feet)
+        assert abs(src.res[0] - TARGET_RES) < 1e-6
+        assert abs(src.res[1] - TARGET_RES) < 1e-6
+        # Check nodata value
+        assert src.nodata == NODATA_VAL
+        # Check pixels are aligned to target resolution
+        assert src.bounds.left % TARGET_RES == 0
+        assert src.bounds.bottom % TARGET_RES == 0
