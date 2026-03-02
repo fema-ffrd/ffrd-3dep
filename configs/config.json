@@ -13,9 +13,9 @@
         "target_res": 4,
         "nodata_val": -9999,
         "buffer_distance": 5000,
-        "max_retries": 3,
+        "max_retries": 6,
         "retry_delay": 10,
         "chunk_size": 2,
-        "n_workers": 4
+        "n_workers": 2
     }
 }
