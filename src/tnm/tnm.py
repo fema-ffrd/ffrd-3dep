@@ -89,15 +89,28 @@ def _execute_api_request(
 
     # Preset res to None to avoid not returning a result
     res = None
+    max_attempts = 5
+    base_delay = 1
 
-    try:
-        res = requests.get(api_url, params=query, timeout=30)
-        res.raise_for_status()  # If something failed about the query, but the request went through
-    except requests.exceptions.HTTPError as e:
-        # 404'd!!!
-        raise e
-    except requests.exceptions.RequestException as e:
-        raise e
+    for attempt in range(max_attempts):
+        try:
+            res = requests.get(api_url, params=query, timeout=30)
+            res.raise_for_status()  # If something failed about the query, but the request went through
+            break
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code if e.response is not None else None
+            should_retry = status_code in {429, 500, 502, 503, 504}
+            if should_retry and attempt < max_attempts - 1:
+                delay = base_delay * (2**attempt)
+                time.sleep(delay)
+                continue
+            raise
+        except requests.exceptions.RequestException:
+            if attempt < max_attempts - 1:
+                delay = base_delay * (2**attempt)
+                time.sleep(delay)
+                continue
+            raise
 
     # Try to parse JSON response
     try:
@@ -1019,6 +1032,7 @@ def create_vrt(
     pattern: str = "*.tif",
     resolution: Optional[str] = "average",
     nodata: Optional[float] = None,
+    relative: bool = True,
 ) -> str:
     """
     Create a Virtual Raster Tile (VRT) file from a folder of 1m DEM .tif tiles.
@@ -1036,6 +1050,7 @@ def create_vrt(
                    Options: "highest", "lowest", "average", "user"
                    Default: "average"
         nodata: NoData value to use. If None, uses source file nodata.
+        relative: If True, write VRT paths relative to the VRT location.
 
     Returns:
         str: Path to the created VRT file
@@ -1045,7 +1060,7 @@ def create_vrt(
         RuntimeError: If gdalbuildvrt command fails
     """
     input_folder = Path(input_folder)
-    output_vrt = os.path.join(vrt_folder, f"terrain_{domain_id}_{target_res}ft.vrt")
+    output_vrt = Path(vrt_folder) / f"terrain_{domain_id}_{target_res}ft.vrt"
 
     # Validate input folder exists
     if not input_folder.exists():
@@ -1085,7 +1100,11 @@ def create_vrt(
     cmd.append(str(output_vrt))
 
     # Add input files
-    cmd.extend([str(f) for f in tif_files])
+    if relative:
+        base_dir = output_vrt.parent
+        cmd.extend([os.path.relpath(f, start=base_dir) for f in tif_files])
+    else:
+        cmd.extend([str(f) for f in tif_files])
 
     print(f"Running: {' '.join(cmd[:5])}... [{len(tif_files)} input files]")
 
