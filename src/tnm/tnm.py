@@ -1119,7 +1119,7 @@ def create_vrt(
     if result.returncode != 0:
         raise RuntimeError(f"gdalbuildvrt failed: {result.stderr}")
 
-    if relative:
+    if relative and output_vrt.exists():
         import xml.etree.ElementTree as ET
 
         tree = ET.parse(output_vrt)
