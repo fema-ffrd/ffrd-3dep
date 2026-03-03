@@ -4,7 +4,7 @@
         "retiled_grids": "/workspaces/ffrd-3dep/data/input/grids/hydraulics-tiles_98304ft_4ft_res.parquet",
         "vrt": "/workspaces/ffrd-3dep/data/output/vrt",
         "tiles": "/workspaces/ffrd-3dep/data/output/tiles",
-        "retile": "/workspaces/ffrd-3dep/data/output/test_retiled",
+        "retile": "/workspaces/ffrd-3dep/data/output/retiled",
         "logs": "/workspaces/ffrd-3dep/data/output/logs"
     },
     "params": {
