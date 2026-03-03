@@ -1,11 +1,12 @@
 """Runner script to acquire DEM tiles from the National Map."""
 
+from __future__ import annotations
+
 # custom imports
 from tnm.tnm import (
     load_txt_file,
     main_get_aws_paths,
     main_get_dem_tiles,
-    create_vrt,
 )
 
 # standard imports
@@ -27,7 +28,7 @@ def load_config(config_path):
 
 
 if __name__ == "__main__":
-    config = load_config(os.path.join(config_dir, "config.json"))
+    config = load_config(os.path.join(config_dir, "get_dem.json"))
     files = config["files"]
     params = config["params"]
     # 1. Get AWS paths for a given area of interest
@@ -54,15 +55,4 @@ if __name__ == "__main__":
         buffer_distance=params["buffer_distance"],
         n_workers=params["n_workers"],
         batch_size=params["chunk_size"],
-    )
-
-    # 3. Create VRT from the acquired DEM tiles
-    create_vrt(
-        domain_id=params["id"],
-        input_folder=files["tiles"],
-        vrt_folder=files["vrt"],
-        target_res=params["target_res"],
-        pattern="*.tif",
-        resolution="average",
-        nodata=params["nodata_val"],
     )
