@@ -1109,10 +1109,31 @@ def create_vrt(
     print(f"Running: {' '.join(cmd[:5])}... [{len(tif_files)} input files]")
 
     # Execute command
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        cwd=str(output_vrt.parent) if relative else None,
+    )
 
     if result.returncode != 0:
         raise RuntimeError(f"gdalbuildvrt failed: {result.stderr}")
+
+    if relative and output_vrt.exists():
+        import xml.etree.ElementTree as ET
+
+        tree = ET.parse(output_vrt)
+        root = tree.getroot()
+        base_dir = output_vrt.parent
+
+        for elem in root.iter("SourceFilename"):
+            src_path = elem.text or ""
+            if src_path:
+                rel_path = os.path.relpath(src_path, start=base_dir)
+                elem.text = rel_path
+                elem.set("relativeToVRT", "1")
+
+        tree.write(output_vrt, encoding="UTF-8", xml_declaration=False)
 
     print(f"Successfully created VRT: {output_vrt}")
     return str(output_vrt)
