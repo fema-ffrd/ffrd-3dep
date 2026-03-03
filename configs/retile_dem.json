@@ -1,0 +1,25 @@
+{
+    "files": {
+        "domain": "/workspaces/ffrd-3dep/data/input/domain/allegheny.geojson",
+        "retiled_grids": "/workspaces/ffrd-3dep/data/input/grids/hydraulics-tiles_98304ft_4ft_res.parquet",
+        "vrt": "/workspaces/ffrd-3dep/data/output/vrt",
+        "tiles": "/workspaces/ffrd-3dep/data/output/tiles",
+        "retile": "/workspaces/ffrd-3dep/data/output/test_retiled",
+        "logs": "/workspaces/ffrd-3dep/data/output/logs"
+    },
+    "params": {
+        "id": "allegheny",
+        "retile_buffer_distance": 0,
+        "retile_target_res": 4,
+        "retile_nodata_val": -9999,
+        "retile_compress": "LZW",
+        "retile_resampling": "bilinear",
+        "retile_blocksize": 256,
+        "retile_n_workers": 10,
+        "retile_batch_size": 25,
+        "retile_pattern": "*.tif",
+        "retile_overwrite": false,
+        "retile_id_field": null,
+        "retile_output_prefix": ""
+    }
+}
