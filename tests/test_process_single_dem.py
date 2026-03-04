@@ -9,10 +9,9 @@ from types import SimpleNamespace
 
 from tnm.tnm import calculate_tap_bounds, process_single_dem
 
+from tests.constants import NODATA_VAL, TARGET_CRS, TARGET_RES
+
 TEST_TILE = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/NY_Southwest_2_Co_2016/TIFF/USGS_one_meter_x24y466_NY_Southwest_2_Co_2016.tif"
-TARGET_CRS = """PROJCS["USA_Contiguous_Albers_Equal_Area_Conic_FFRD",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Albers"],PARAMETER["False_Easting",0.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",-96.0],PARAMETER["Standard_Parallel_1",29.5],PARAMETER["Standard_Parallel_2",45.5],PARAMETER["Latitude_Of_Origin",23.0],UNIT["Foot",0.3048]]"""
-TARGET_RES = 4.0
-NODATA_VAL = -9999
 
 
 class _FakeGeoDataFrame:
