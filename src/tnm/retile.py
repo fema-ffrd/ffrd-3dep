@@ -220,7 +220,31 @@ def retile_tiles(
     output_prefix: str = "",
     logs_folder: Optional[Path] = None,
 ) -> gpd.GeoDataFrame:
-    """Retile processed DEM tiles into a new tiling scheme."""
+    """Retile processed DEM tiles into a new tiling scheme.
+
+    Args:
+        tiles_folder: Path to input DEM tiles acquired from the USGS 3DEP program
+        grids_file: Path to a parquet file containing the grid definitions for the new tiling scheme
+        domain_file: Optional[Path] to a vector file defining the domain of interest
+        buffer_distance: float distance to buffer the domain geometry
+        output_folder: Path to the folder where the retiled DEMs will be saved
+        target_res: Optional[float] target resolution for the output tiles
+        nodata_val: float value to use for nodata pixels
+        compress: str compression method for the output tiles
+        resampling: str resampling method to use during reprojection
+        blocksize: int block size for the output tiles
+        n_workers: int number of parallel workers to use
+        batch_size: int number of tiles to process in each batch
+        pattern: str glob pattern to match input tiles
+        vrt_path: Optional[Path] path to an existing VRT file to use as the source
+        overwrite: bool whether to overwrite existing output tiles
+        id_field: Optional[str] name of the field in the grids file to use as the tile ID
+        output_prefix: str prefix to add to the output tile filenames
+        logs_folder: Optional[Path] path to a folder where log files will be saved
+
+    Returns:
+        gpd.GeoDataFrame: A GeoDataFrame containing the results of the retile operation.
+    """
     tiles_folder = Path(tiles_folder)
     grids_file = Path(grids_file)
     output_folder = Path(output_folder)
@@ -342,52 +366,3 @@ def retile_tiles(
         raise RuntimeError("All retile tasks failed. Check the retile log for details.")
 
     return results_df
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Retile processed DEM tiles to a new tiling scheme."
-    )
-    parser.add_argument("--tiles-folder", required=True)
-    parser.add_argument("--grids-file", required=True)
-    parser.add_argument("--domain-file")
-    parser.add_argument("--buffer-distance", type=float, default=0)
-    parser.add_argument("--output-folder", required=True)
-    parser.add_argument("--target-res", type=float, required=True)
-    parser.add_argument("--nodata", type=float, default=-9999)
-    parser.add_argument("--compress", default="LZW")
-    parser.add_argument("--resampling", default="bilinear")
-    parser.add_argument("--blocksize", type=int, default=256)
-    parser.add_argument("--n-workers", type=int, default=4)
-    parser.add_argument("--batch-size", type=int, default=50)
-    parser.add_argument("--pattern", default="*.tif")
-    parser.add_argument("--vrt-path")
-    parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--id-field")
-    parser.add_argument("--output-prefix", default="")
-    parser.add_argument("--logs-folder")
-
-    args = parser.parse_args()
-
-    retile_tiles(
-        tiles_folder=Path(args.tiles_folder),
-        grids_file=Path(args.grids_file),
-        domain_file=Path(args.domain_file) if args.domain_file else None,
-        buffer_distance=args.buffer_distance,
-        output_folder=Path(args.output_folder),
-        target_res=args.target_res,
-        nodata_val=args.nodata,
-        compress=args.compress,
-        resampling=args.resampling,
-        blocksize=args.blocksize,
-        n_workers=args.n_workers,
-        batch_size=args.batch_size,
-        pattern=args.pattern,
-        vrt_path=Path(args.vrt_path) if args.vrt_path else None,
-        overwrite=args.overwrite,
-        id_field=args.id_field,
-        output_prefix=args.output_prefix,
-        logs_folder=Path(args.logs_folder) if args.logs_folder else None,
-    )
