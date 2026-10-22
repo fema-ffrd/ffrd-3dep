@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+"""TNM API Utility Functions"""
+
 # Standard Imports
 import gc
 import os
@@ -84,7 +87,7 @@ def _execute_api_request(
     query = {k: template_query_params[k] for k in template_query_params}
 
     # Add any new specifics for thie query
-    for key in specific_query_params:
+    for key in specific_query_params:  # noqa: PLC0206
         query[key] = specific_query_params[key]
 
     # Preset res to None to avoid not returning a result
@@ -117,13 +120,13 @@ def _execute_api_request(
         response_json = res.json()
     except ValueError as e:
         # Invalid JSON response
-        raise Exception(
+        raise Exception(  # noqa: TRY002
             f"The National Map API returned invalid JSON. Response text: {res.text[:500]}. URL: {res.url}"
         ) from e
 
     # Check if response is a string (error message) instead of expected dict
     if isinstance(response_json, str):
-        raise Exception(
+        raise Exception(  # noqa: TRY002, TRY004
             f"The API returned an unexpected string response: {response_json[:500]}. URL: {res.url}"
         )
 
@@ -134,7 +137,7 @@ def _execute_api_request(
             error_message = error_details.get("message", "Unknown error")
         else:
             error_message = str(error_details)
-        raise Exception(
+        raise Exception(  # noqa: TRY002
             f"The API request completed with an error: {error_message}. "
             f"There is likely a problem in the parameters of the request. URL: {res.url}"
         )
@@ -192,7 +195,7 @@ def _execute_TNM_api_query(
             for i, item_i in enumerate(split_urls):
                 if not (drop_items[i]):
                     for j, item_j in enumerate(split_urls):
-                        if not (i == j):
+                        if not (i == j):  # noqa: SIM102, SIM201
                             if (
                                 item_i[0] == item_j[0]
                             ):  # if the base url is the same, compare the dates and keep the most recent
@@ -212,7 +215,7 @@ def _execute_TNM_api_query(
                 with open(filePath, "a") as outputs_file:
                     outputs_file.writelines(line + "\n" for line in aws_url)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"Error writing AWS URLs to {filePath}: {e}")
                 savepath = os.path.join(filePath, "awsPaths.txt")
                 with open(savepath, "a") as outputs_file:
@@ -233,7 +236,7 @@ def _execute_TNM_api_query(
                 )
             aws_url = None
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(
             f"Error querying National Map API: {e}. Request to: {apiURL}, with parameters: {specificQueryParams}"
         )
@@ -259,7 +262,7 @@ def _check_tnm_dataset_datatype_compatibility(dataset: str, dataType: str):
     """
 
     if (dataset == "LPC") and (dataType not in LIDARDATAYPES):
-        raise Exception(
+        raise Exception(  # noqa: TRY002
             f"Warning, {dataType} is not available. Available datatypes for LPC are LAS, LAZ, or LAS,LAZ"
         )
 
@@ -304,7 +307,7 @@ def get_aws_paths(
     yMin: float,
     xMax: float,
     yMax: float,
-    filePath: str = None,
+    filePath: str = None,  # noqa: RUF013
     dataType: str = "",
     inputEPSG: int = EXPECTED_EPSG,
     doExcludeRedundantData: bool = True,
@@ -557,10 +560,10 @@ def main_get_aws_paths(
                     time.sleep(wait_time)
                     continue
                 else:
-                    raise Exception(
+                    raise Exception(  # noqa: TRY002
                         f"The National Map API timed out after {max_retries} attempts. The service may be experiencing high load."
                     )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print("An error occurred:", str(e))
     master_aws_paths = list(set(master_aws_paths))  # deduplicate paths
     master_aws_paths.sort()
@@ -569,7 +572,7 @@ def main_get_aws_paths(
     os.makedirs(aws_output_folder, exist_ok=True)
     aws_output_file = os.path.join(aws_output_folder, "aws_paths.txt")
     with open(aws_output_file, "w") as f:
-        f.writelines("%s\n" % path for path in master_aws_paths)
+        f.writelines("%s\n" % path for path in master_aws_paths)  # noqa: UP031
     return master_aws_paths
 
 
@@ -709,7 +712,7 @@ def process_single_dem(args: tuple) -> dict:
     try:
         # Use chunks to avoid loading entire raster into memory
         ds = rxr.open_rasterio(path, chunks={"x": 2048, "y": 2048})
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         result["message"] = f"Error reading from s3: {e}"
         return result
 
@@ -739,7 +742,7 @@ def process_single_dem(args: tuple) -> dict:
             # Clip the raster - use drop=True to minimize output size
             try:
                 ds = ds.rio.clip(clip_geom_transformed, all_touched=True, drop=True)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # Check if it's a "no data in bounds" error (expected when tile doesn't overlap domain)
                 if "No data found in bounds" in str(e):
                     result["message"] = "Tile does not intersect with domain boundary"
@@ -840,12 +843,12 @@ def process_single_dem(args: tuple) -> dict:
 
             return result
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             result["message"] = f"Error processing: {e}"
             if ds is not None:
                 try:
                     ds.close()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001, S110
                     pass
                 del ds
             gc.collect()
@@ -867,7 +870,7 @@ def wrapper_process_single_dem(args: tuple) -> dict:
     try:
         result = process_single_dem(args)
         return result
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         result = {
             "path": args[0] if args else "",
             "output_path": args[1] if len(args) > 1 else "",
@@ -1110,7 +1113,7 @@ def create_vrt(
     print(f"Running: {' '.join(cmd[:5])}... [{len(tif_files)} input files]")
 
     # Execute command
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: PLW1510
         cmd,
         capture_output=True,
         text=True,

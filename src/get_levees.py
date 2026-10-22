@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Runner script to acquire DEM tiles from the National Map."""
 
 from __future__ import annotations

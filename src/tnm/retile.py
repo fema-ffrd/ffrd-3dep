@@ -84,7 +84,7 @@ def build_vrt(
     cmd.append(str(vrt_path))
     cmd.extend([str(f) for f in tif_files])
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"gdalbuildvrt failed: {result.stderr}")
 
@@ -177,7 +177,7 @@ def _retile_worker(args: tuple) -> dict:
 
         cmd.extend([str(vrt_path), str(output_path)])
 
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
         if proc.returncode != 0:
             result["message"] = proc.stderr.strip() or "gdalwarp failed"
             return result
