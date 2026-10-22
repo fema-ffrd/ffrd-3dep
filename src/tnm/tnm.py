@@ -1,26 +1,26 @@
 # Standard Imports
+import gc
 import os
 import re
-import gc
-import time
-import urllib
-from typing import Optional, Union
-from pathlib import Path
-from multiprocessing import get_context
 
 # Third party imports
 import subprocess
-import requests
-import pyproj
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
-import rioxarray as rxr
-from rasterio.transform import from_bounds
-from rasterio.enums import Resampling
+import time
+import urllib
+from multiprocessing import get_context
+from pathlib import Path
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+import pyproj
+import requests
+import rioxarray as rxr
+from rasterio.enums import Resampling
+from rasterio.transform import from_bounds
 from shapely import wkb
 from shapely.geometry import Point, box
+from tqdm import tqdm
 
 # Determine current directory
 currDir = os.path.dirname(__file__)
@@ -149,7 +149,7 @@ def _execute_TNM_api_query(
     specificQueryParams: dict,
     filePath: str,
     doExcludeRedundantData: bool,
-    maxitems: Optional[int] = 500,
+    maxitems: int | None = 500,
 ) -> list:
     """Queries the National Map API and returns list of web-hosted datasets
 
@@ -204,25 +204,19 @@ def _execute_TNM_api_query(
             aws_url = [aws_url[i] for i in range(len(aws_url)) if not drop_items[i]]
 
         if total > len(items):
-            print(
-                "{} products are available; {} have been fetched.".format(
-                    total, maxitems
-                )
-            )
+            print(f"{total} products are available; {maxitems} have been fetched.")
 
         if len(aws_url) > 0 and filePath is not None:
             try:
                 # If the query returned products AND filePath was specified, write to it
                 with open(filePath, "a") as outputs_file:
-                    for line in aws_url:
-                        outputs_file.write(line + "\n")
+                    outputs_file.writelines(line + "\n" for line in aws_url)
 
             except Exception as e:
                 print(f"Error writing AWS URLs to {filePath}: {e}")
                 savepath = os.path.join(filePath, "awsPaths.txt")
                 with open(savepath, "a") as outputs_file:
-                    for line in aws_url:
-                        outputs_file.write(line + "\n")
+                    outputs_file.writelines(line + "\n" for line in aws_url)
 
         if not aws_url:
             if total == 0:
@@ -235,17 +229,13 @@ def _execute_TNM_api_query(
                 )
             else:
                 print(
-                    "No products available API request to: {}, with parameters: {}".format(
-                        apiURL, specificQueryParams
-                    )
+                    f"No products available API request to: {apiURL}, with parameters: {specificQueryParams}"
                 )
             aws_url = None
 
     except Exception as e:
         print(
-            "Error querying National Map API: {}. Request to: {}, with parameters: {}".format(
-                e, apiURL, specificQueryParams
-            )
+            f"Error querying National Map API: {e}. Request to: {apiURL}, with parameters: {specificQueryParams}"
         )
         aws_url = None
 
@@ -270,18 +260,14 @@ def _check_tnm_dataset_datatype_compatibility(dataset: str, dataType: str):
 
     if (dataset == "LPC") and (dataType not in LIDARDATAYPES):
         raise Exception(
-            "Warning, {} is not available. Available datatypes for LPC are LAS, LAZ, or LAS,LAZ".format(
-                dataType
-            )
+            f"Warning, {dataType} is not available. Available datatypes for LPC are LAS, LAZ, or LAS,LAZ"
         )
 
     try:
         dataset_fullname = DATASETS_DICT[dataset]
     except KeyError as e:
         raise KeyError(
-            "Warning, {} is not available. Available datasets are: {}".format(
-                dataset, list(DATASETS_DICT.keys())
-            )
+            f"Warning, {dataset} is not available. Available datasets are: {list(DATASETS_DICT.keys())}"
         ) from e
 
     return dataset_fullname
@@ -299,8 +285,8 @@ def reprojectXYPoints(xyPoints: list, inEPSG: int, outEPSG: int) -> list:
             outPoints (tuple): The x,y vectors transformed into the target coordinate reference system
     """
 
-    fromCRS = pyproj.CRS("EPSG:{}".format(inEPSG))
-    toCRS = pyproj.CRS("EPSG:{}".format(outEPSG))
+    fromCRS = pyproj.CRS(f"EPSG:{inEPSG}")
+    toCRS = pyproj.CRS(f"EPSG:{outEPSG}")
 
     transformer = pyproj.Transformer.from_crs(fromCRS, toCRS, always_xy=True)
 
@@ -322,7 +308,7 @@ def get_aws_paths(
     dataType: str = "",
     inputEPSG: int = EXPECTED_EPSG,
     doExcludeRedundantData: bool = True,
-    maxitems: Optional[int] = 500,
+    maxitems: int | None = 500,
 ) -> list:
     """Retrieves paths to geospatial products from TNM of a user-requested
     dataset type, delineated by a bounding box of x,y coordinates
@@ -362,7 +348,7 @@ def get_aws_paths(
 
     specificQueryParams = {
         "prodFormats": dataType,
-        "bbox": "{},{},{},{}".format(xMin, yMin, xMax, yMax),
+        "bbox": f"{xMin},{yMin},{xMax},{yMax}",
         "datasets": datasetFullName,
         "offset": "0",
     }
@@ -583,8 +569,7 @@ def main_get_aws_paths(
     os.makedirs(aws_output_folder, exist_ok=True)
     aws_output_file = os.path.join(aws_output_folder, "aws_paths.txt")
     with open(aws_output_file, "w") as f:
-        for path in master_aws_paths:
-            f.write("%s\n" % path)
+        f.writelines("%s\n" % path for path in master_aws_paths)
     return master_aws_paths
 
 
@@ -601,13 +586,16 @@ def get_dem_coords(path: str) -> tuple:
     # Extract just the filename if a full path is provided
     basename = os.path.basename(path)
 
-    # Match pattern like 'x63y499' - x followed by digits, y followed by digits
+    # Match 1m DEM pattern like 'x63y499'
     match = re.search(r"x(\d+)y(\d+)", basename)
-
     if match:
-        x = int(match.group(1))
-        y = int(match.group(2))
-        return (x, y)
+        return (int(match.group(1)), int(match.group(2)))
+
+    # Match NED/OPR lat-lon pattern like 'n40w079' or 's05e120'
+    match = re.search(r"[ns](\d+)[ew](\d+)", basename, re.IGNORECASE)
+    if match:
+        return (int(match.group(1)), int(match.group(2)))
+
     return None
 
 
@@ -643,6 +631,11 @@ def get_dem_year(path: str) -> int:
     else:
         year_idx = None
         year_match = None
+        # Fall back to extracting year from the filename date stamp (e.g. _20260512.tif)
+        filename = split_path[-1]
+        file_date_match = re.search(r"_(\d{4})\d{4}\.", filename)
+        if file_date_match:
+            return int(file_date_match.group(1)), project_name
         print(f"No year found in project name '{project_name}'")
         return None, project_name
 
@@ -879,7 +872,7 @@ def wrapper_process_single_dem(args: tuple) -> dict:
             "path": args[0] if args else "",
             "output_path": args[1] if len(args) > 1 else "",
             "success": False,
-            "message": f"{str(e)}",
+            "message": f"{e!s}",
         }
         return result
 
@@ -936,8 +929,16 @@ def main_get_dem_tiles(
         if key not in path_info:
             path_info[key] = p
 
-    # Convert to list for batching
-    items = list(path_info.items())
+    # Skip tiles that were already successfully written
+    os.makedirs(tiles_folder, exist_ok=True)
+    items = [
+        (key, p)
+        for key, p in path_info.items()
+        if not os.path.exists(os.path.join(tiles_folder, os.path.basename(p)))
+    ]
+    skipped = len(path_info) - len(items)
+    if skipped:
+        print(f"Skipping {skipped} tile(s) already present in {tiles_folder}")
     total_items = len(items)
     num_batches = (total_items + batch_size - 1) // batch_size
 
@@ -1026,12 +1027,12 @@ def main_get_dem_tiles(
 
 def create_vrt(
     domain_id: str,
-    input_folder: Union[str, Path],
-    vrt_folder: Union[str, Path],
+    input_folder: str | Path,
+    vrt_folder: str | Path,
     target_res: int,
     pattern: str = "*.tif",
-    resolution: Optional[str] = "average",
-    nodata: Optional[float] = None,
+    resolution: str | None = "average",
+    nodata: float | None = None,
     relative: bool = True,
 ) -> str:
     """

@@ -9,15 +9,14 @@ import re
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Iterable
 from multiprocessing import get_context
 from pathlib import Path
-from typing import Iterable, Optional
 
 import geopandas as gpd
 import rasterio
 from shapely import wkb
 from shapely.geometry import mapping
-
 
 DEFAULT_GDAL_CACHE_MB = 256
 DEFAULT_GDAL_THREADS = "1"
@@ -33,7 +32,7 @@ def _safe_name(value: object) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", value_str)
 
 
-def _resolve_id_field(gdf: gpd.GeoDataFrame, id_field: Optional[str]) -> Optional[str]:
+def _resolve_id_field(gdf: gpd.GeoDataFrame, id_field: str | None) -> str | None:
     if id_field is not None:
         if id_field not in gdf.columns:
             raise ValueError(f"id_field '{id_field}' not found in grids file")
@@ -60,8 +59,8 @@ def build_vrt(
     input_folder: Path,
     vrt_path: Path,
     pattern: str = "*.tif",
-    nodata: Optional[float] = None,
-    resolution: Optional[str] = "average",
+    nodata: float | None = None,
+    resolution: str | None = "average",
 ) -> Path:
     """Create a VRT that mosaics all tiles in the input folder."""
     input_folder = Path(input_folder)
@@ -203,10 +202,10 @@ def _batch_iter(items: list, batch_size: int) -> Iterable[list]:
 def retile_tiles(
     tiles_folder: Path,
     grids_file: Path,
-    domain_file: Optional[Path],
+    domain_file: Path | None,
     buffer_distance: float,
     output_folder: Path,
-    target_res: Optional[float],
+    target_res: float | None,
     nodata_val: float = -9999,
     compress: str = "LZW",
     resampling: str = "bilinear",
@@ -214,11 +213,11 @@ def retile_tiles(
     n_workers: int = 4,
     batch_size: int = 50,
     pattern: str = "*.tif",
-    vrt_path: Optional[Path] = None,
+    vrt_path: Path | None = None,
     overwrite: bool = False,
-    id_field: Optional[str] = None,
+    id_field: str | None = None,
     output_prefix: str = "",
-    logs_folder: Optional[Path] = None,
+    logs_folder: Path | None = None,
 ) -> gpd.GeoDataFrame:
     """Retile processed DEM tiles into a new tiling scheme.
 

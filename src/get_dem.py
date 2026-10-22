@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+import json
+
+# standard imports
+import os
+import sys
+
 # custom imports
 from tnm.tnm import (
     load_txt_file,
     main_get_aws_paths,
     main_get_dem_tiles,
 )
-
-# standard imports
-import os
-import sys
-import json
 
 # mount the src directory
 src_dir = os.path.dirname(__file__)

@@ -2,12 +2,11 @@
 
 from pathlib import Path
 
-from shapely.geometry import box
 from shapely import wkb
-
-from tnm.retile import _retile_worker
+from shapely.geometry import box
 
 from tests.constants import NODATA_VAL, TARGET_CRS, TARGET_RES
+from tnm.retile import _retile_worker
 
 
 class _FakeCompleted:

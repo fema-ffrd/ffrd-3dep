@@ -1,7 +1,7 @@
 """Unit tests for tnm utilities."""
 
-from unittest import mock
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -60,7 +60,7 @@ def test_dataset_compatibility_invalid_dataset():
 
 
 def test_dataset_compatibility_invalid_datatype():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         _check_tnm_dataset_datatype_compatibility("LPC", "BAD")
 
 

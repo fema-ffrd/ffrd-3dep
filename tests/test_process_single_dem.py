@@ -1,15 +1,15 @@
 """Tests for process_single_dem reprojection behavior."""
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 import rasterio
-from shapely.geometry import box
 from shapely import wkb
-from types import SimpleNamespace
-
-from tnm.tnm import calculate_tap_bounds, process_single_dem
+from shapely.geometry import box
 
 from tests.constants import NODATA_VAL, TARGET_CRS, TARGET_RES
+from tnm.tnm import calculate_tap_bounds, process_single_dem
 
 TEST_TILE = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/NY_Southwest_2_Co_2016/TIFF/USGS_one_meter_x24y466_NY_Southwest_2_Co_2016.tif"
 
@@ -65,7 +65,6 @@ class _FakeRio:
 
     def to_raster(self, *_args, **_kwargs):
         self.last_to_raster = {"args": _args, "kwargs": _kwargs}
-        return None
 
 
 class _FakeDataset:

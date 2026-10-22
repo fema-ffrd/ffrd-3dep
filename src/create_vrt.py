@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-# custom imports
-from tnm.tnm import create_vrt
-
 # standard imports
 import json
 import os
 import sys
 from pathlib import Path
+
+# custom imports
+from tnm.tnm import create_vrt
 
 # mount the src directory
 src_dir = os.path.dirname(__file__)
