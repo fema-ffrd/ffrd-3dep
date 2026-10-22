@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-# custom imports
-from tnm.retile import retile_tiles
-
 import json
 import os
 import sys
 from pathlib import Path
+
+# custom imports
+from tnm.retile import retile_tiles
 
 # mount the src directory
 src_dir = os.path.dirname(__file__)
